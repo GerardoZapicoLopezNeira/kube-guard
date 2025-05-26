@@ -1,35 +1,50 @@
 # 🛡️ Kube-Guard
 
-**Kube-Guard** is a security auditing tool for Kubernetes clusters. It provides a web-based interface to launch and visualize vulnerability scans on container images and cluster configurations using tools like **Trivy** and **kube-bench**.
+**Kube-Guard** is a Kubernetes-native security auditing and policy enforcement tool. It provides a web dashboard to monitor and manage container and cluster-level security using tools like **Trivy**, **kube-bench**, and **Kyverno**.
 
 ## 🚀 Features
 
-- 🔍 Scan container images for known CVEs using [Trivy](https://github.com/aquasecurity/trivy)
-- 🔒 Audit cluster configurations against CIS benchmarks using [kube-bench](https://github.com/aquasecurity/kube-bench)
-- 📊 Web interface to launch scans and view detailed results
-- 🧱 Deployable via Helm chart
-- 🐳 Fully containerized (backend and frontend)
+- 🔍 CVE scanning on deployed container images using [Trivy Operator](https://github.com/aquasecurity/trivy-operator)
+- 🔒 Audit misconfigurations with [kube-bench](https://github.com/aquasecurity/kube-bench)
+- ⚖️ Policy violation reporting using [Kyverno](https://kyverno.io/)
+- 📊 Dashboard to view vulnerabilities and misconfigurations by namespace/severity
+- 💬 Summary endpoints to integrate into future frontend
+- 🔁 Policy management (view, enforce mode, violation insights)
 
 ## 📦 Architecture
 
-Kube-Guard consists of:
+- **Frontend**: React-based SPA
+- **Backend**: FastAPI app exposing security endpoints
+- **Operators**:
+  - Trivy Operator (image scanning)
+  - Kyverno (policy engine)
+- **Deployment**: Minikube (for local dev), Helm (for production-ready)
 
-- **Frontend**: React-based dashboard
-- **Backend**: Python FastAPI service that launches scan jobs and collects results
-- **Security jobs**: Kubernetes Jobs for Trivy and kube-bench scans
-- **Helm Chart**: for easy deployment on any Kubernetes cluster
+> See `docs/architecture.md` for diagrams and flow.
 
 ## 🧑‍💻 Getting Started
 
 ### Prerequisites
 
-- Kubernetes cluster (e.g., Minikube)
-- kubectl configured
-- Docker installed
-- Helm v3+
+- Kubernetes cluster (e.g. Minikube)
+- Docker
+- Helm v3
+- Python 3.12 with `poetry` or `venv`
 
-### 1. Clone the repository
+### Quickstart (dev)
 
 ```bash
+# Clone
 git clone https://github.com/your-org/kube-guard.git
 cd kube-guard
+
+# Backend
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# Frontend
+cd frontend
+npm install
+npm run dev
