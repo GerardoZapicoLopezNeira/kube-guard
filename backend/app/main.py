@@ -1,6 +1,6 @@
 # backend/app/main.py
 from fastapi import FastAPI
-from app.api import trivy, kubebench, kyverno
+from app.api import trivy, kyverno, rbac, correlation
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import load_k8s_config
 
@@ -25,6 +25,9 @@ app.add_middleware(
 app.include_router(trivy.router, prefix="/trivy", tags=["Trivy"])
 # app.include_router(kubebench.router, prefix="/kubebench", tags=["Kube-Bench"])
 app.include_router(kyverno.router, prefix="/kyverno", tags=["Kyverno"])
+app.include_router(rbac.router, prefix="/rbac", tags=["RBAC"])
+app.include_router(correlation.router, prefix="/correlation", tags=["Correlation"])
+
 
 @app.get("/health", tags=["Health"])
 def health():
