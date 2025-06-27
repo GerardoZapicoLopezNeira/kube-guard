@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-guard-operator
+  namespace: kube-guard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-guard-operator
+  namespace: kube-guard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-guard-operator
+  template:
+    metadata:
+      labels:
+        app: kube-guard-operator
+    spec:
+      serviceAccountName: kube-guard-operator
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      containers:
+      - name: operator
+        image: kube-guard-operator:dev
+        imagePullPolicy: Never
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+

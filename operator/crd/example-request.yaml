@@ -1,0 +1,15 @@
+apiVersion: kube-guard.io/v1alpha1
+kind: ScanRequest
+metadata:
+  name: nginx-test
+  namespace: kube-guard
+spec:
+  source:
+    type: git
+    repo: https://github.com/bitnami/charts.git
+    path: bitnami/nginx
+    ref: main
+  render:
+    type: helm
+  scanners:
+    - kubelinter
