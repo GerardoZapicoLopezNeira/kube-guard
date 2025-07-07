@@ -1,1 +1,73 @@
-
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: scanrequests.kube-guard.io
+spec:
+  group: kube-guard.io
+  scope: Namespaced
+  names:
+    plural: scanrequests
+    singular: scanrequest
+    kind: ScanRequest
+    listKind: ScanRequestList
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            spec:
+              type: object
+              required: [source]
+              properties:
+                source:
+                  type: object
+                  required: [path]
+                  properties:
+                    repo:
+                      type: string
+                      description: "URL del repositorio Git (opcional si es local)"
+                    path:
+                      type: string
+                      description: "Ruta al Helm chart dentro del repo"
+                    ref:
+                      type: string
+                      default: "main"
+                      description: "Rama del repositorio"
+                scanners:
+                  type: array
+                  items:
+                    type: string
+                  description: "Lista de escáneres a usar: trivy, kubelinter, rbac"
+                render:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: ["helm"]
+                      default: "helm"
+                      description: "Método de renderizado (solo helm por ahora)"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                message:
+                  type: string
+                startedAt:
+                  type: string
+                finishedAt:
+                  type: string
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Started
+          type: date
+          jsonPath: .status.startedAt
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
