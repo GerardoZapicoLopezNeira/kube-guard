@@ -1,8 +1,9 @@
 # backend/app/main.py
 from fastapi import FastAPI
-from app.api import trivy, kyverno, rbac, correlation
+from app.api import trivy, kyverno, rbac, correlation, offline_scan
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import load_k8s_config
+
 
 app = FastAPI(title="Kube-Guard API")
 
@@ -27,6 +28,7 @@ app.include_router(trivy.router, prefix="/trivy", tags=["Trivy"])
 app.include_router(kyverno.router, prefix="/kyverno", tags=["Kyverno"])
 app.include_router(rbac.router, prefix="/rbac", tags=["RBAC"])
 app.include_router(correlation.router, prefix="/correlation", tags=["Correlation"])
+app.include_router(offline_scan.router, prefix="/offline", tags=["Offline Scan"])
 
 
 @app.get("/health", tags=["Health"])

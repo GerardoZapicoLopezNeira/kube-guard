@@ -4,7 +4,7 @@ from kubernetes import client
 from typing import List, Optional, Tuple
 from app.models.correlation import CorrelatedRiskReport
 from app.services.trivy_service import get_trivy_reports
-from app.services.rbac_tool_service import run_rbac_analysis
+from app.services.rbac_service import run_rbac_analysis
 from app.models.trivy import TrivyReport
 from app.models.rbac import RbacFinding
 
@@ -34,6 +34,16 @@ def get_service_account_for_resource(namespace: str, report_name: str) -> Option
             for dep in deps:
                 if dep.metadata.name in report_name:
                     return dep.spec.template.spec.service_account_name
+        elif kind == "statefulset":
+            sts = apps_v1.list_namespaced_stateful_set(namespace).items
+            for st in sts:
+                if st.metadata.name in report_name:
+                    return st.spec.template.spec.service_account_name
+        elif kind == "daemonset":
+            dss = apps_v1.list_namespaced_daemon_set(namespace).items
+            for ds in dss:
+                if ds.metadata.name in report_name:
+                    return ds.spec.template.spec.service_account_name
 
     except Exception as e:
         print(f"[ERROR] Could not retrieve SA for {report_name} in {namespace}: {e}")

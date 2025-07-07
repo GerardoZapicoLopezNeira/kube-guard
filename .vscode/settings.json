@@ -1,0 +1,5 @@
+{
+    "yaml.schemas": {
+        "https://www.schemastore.org/yamllint.json": "file:///home/gerardozapico/Documents/UC3M/TFM/kube-guard/operator/crd/example-request.yaml"
+    }
+}

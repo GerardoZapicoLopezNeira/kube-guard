@@ -2,6 +2,18 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
+class RbacOrigin(BaseModel):
+    apiGroup: str
+    kind: str
+    name: str
+
+class RbacAllowedAction(BaseModel):
+    namespace: Optional[str]
+    verb: str
+    apiGroup: Optional[str]
+    resource: Optional[str]
+    originatedFrom: List[RbacOrigin]
+
 class Subject(BaseModel):
     kind: str
     name: str
@@ -20,11 +32,36 @@ class RbacFinding(BaseModel):
     Subject: Subject
     Finding: FindingDetails
 
-class RbacPolicyRule(BaseModel):
-    apiGroups: List[str]
-    resources: List[str]
-    verbs: List[str]
-    resourceNames: Optional[List[str]] = None
-    nonResourceURLs: Optional[List[str]] = None
-    namespace: Optional[str] = None
+class RbacFindingWithRules(BaseModel):
+    finding: RbacFinding
+    rules: List[RbacAllowedAction]
 
+class RbacCheck(BaseModel):
+    checkID: str
+    title: str
+    description: str
+    category: str
+    severity: str
+    success: bool
+    remediation: str
+    messages: List[str]
+
+class RbacSummary(BaseModel):
+    critical: int
+    high: int
+    medium: int
+    low: int
+
+class RbacAssessmentReport(BaseModel):
+    name: str
+    namespace: str
+    creation_timestamp: str
+    resource_kind: str
+    resource_name: str
+    uid: str
+    checks: List[RbacCheck]
+    summary: RbacSummary
+
+
+
+    
