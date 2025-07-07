@@ -1,9 +1,10 @@
-# backend/app/services/rbac_tool.py
-import subprocess, json
+# backend/app/services/rbac_service.py
 from kubernetes import client
-from app.models.rbac import RbacFinding, RbacFindingWithRules, RbacAllowedAction, RbacAssessmentReport, RbacCheck, RbacOrigin, RbacSummary
-from typing import List, Optional
-
+import subprocess, json
+from kubernetes.client import V1ClusterRoleBinding, V1RoleBinding
+import yaml
+from app.models.rbac import RbacFinding, RbacPolicyRule, RbacBinding, RbacSubject, RbacRoleRef
+from typing import Dict, List
 
 def run_rbac_analysis() -> List[RbacFinding]:
     try:
@@ -20,98 +21,119 @@ def run_rbac_analysis() -> List[RbacFinding]:
         print(f"[RBAC TOOL ERROR] {e}")
         return []
 
-def run_rbac_analysis_with_rules() -> List[RbacFindingWithRules]:
-    findings_with_rules = []
-
+def get_rbac_policy_rules() -> List[RbacPolicyRule]:
     try:
-        # Ejecutar el análisis
         result = subprocess.run(
-            ["kubectl", "rbac-tool", "analysis", "-o", "json"],
+            ["kubectl", "rbac-tool", "policyrules", "-o", "json"],
             capture_output=True,
             check=True,
             timeout=30
         )
-        findings_output = json.loads(result.stdout)
-        findings = findings_output.get("Findings", [])
+        output = json.loads(result.stdout)
+        rules = output.get("PolicyRules", [])
+        return [RbacPolicyRule(**r) for r in rules]
+    except Exception as e:
+        print(f"[RBAC TOOL ERROR] {e}")
+        return []
 
-        for raw_finding in findings:
-            finding = RbacFinding(**raw_finding)
-            sa_name = finding.Subject.name
+def who_can(verb: str, resource: str, namespace: str = None) -> List[Dict]:
+    rbac = client.RbacAuthorizationV1Api()
+    authz_rules = []
 
-            try:
-                # Ejecutar policy-rules por ServiceAccount
-                policy_result = subprocess.run(
-                    ["kubectl", "rbac-tool", "policy-rules", "-e", sa_name, "-o", "json"],
-                    capture_output=True,
-                    check=True,
-                    timeout=10
-                )
-                policy_data = json.loads(policy_result.stdout)
-                rules_data = policy_data[0].get("allowedTo", []) if policy_data else []
+    # 1. Obtener todos los RoleBindings y ClusterRoleBindings
+    role_bindings = rbac.list_namespaced_role_binding(namespace=namespace).items if namespace else []
+    cluster_role_bindings = rbac.list_cluster_role_binding().items
 
-                rules: List[RbacAllowedAction] = []
-                for r in rules_data:
-                    origins = [RbacOrigin(**o) for o in r.get("originatedFrom", [])]
-                    rule = RbacAllowedAction(
-                        namespace=r.get("namespace"),
-                        verb=r.get("verb"),
-                        apiGroup=r.get("apiGroup"),
-                        resource=r.get("resource"),
-                        originatedFrom=origins
-                    )
-                    rules.append(rule)
+    # 2. Obtener todos los Roles y ClusterRoles
+    roles = rbac.list_namespaced_role(namespace=namespace).items if namespace else []
+    cluster_roles = rbac.list_cluster_role().items
 
-                findings_with_rules.append(
-                    RbacFindingWithRules(finding=finding, rules=rules)
-                )
-            except Exception as policy_err:
-                print(f"[RBAC TOOL] Error fetching rules for SA {sa_name}: {policy_err}")
-                findings_with_rules.append(
-                    RbacFindingWithRules(finding=finding, rules=[])
-                )
+    def matches_rule(rules, verb, resource):
+        for rule in rules:
+            verbs = rule.verbs or []
+            resources = rule.resources or []
 
-    except Exception as analysis_err:
-        print(f"[RBAC TOOL] Error running analysis: {analysis_err}")
-
-    return findings_with_rules
+            if (verb in verbs or "*" in verbs) and (resource in resources or "*" in resources):
+                return True
+        return False
 
 
-def fetch_rbac_assessment_reports(namespace: str = None) -> List[RbacAssessmentReport]:
-    k8s = client.CustomObjectsApi()
-    group = "aquasecurity.github.io"
-    version = "v1alpha1"
-    plural = "rbacassessmentreports"
 
-    if namespace:
-        response = k8s.list_namespaced_custom_object(group, version, namespace, plural)
-    else:
-        response = k8s.list_cluster_custom_object(group, version, plural)
+    # 3. Procesar RoleBindings
+    for rb in role_bindings:
+        role_name = rb.role_ref.name
+        role_kind = rb.role_ref.kind
 
-    reports = []
-    for item in response.get("items", []):
-        metadata = item.get("metadata", {})
-        report = item.get("report", {})
-        checks_data = report.get("checks", [])
-        summary_data = report.get("summary", {})
+        if role_kind == "Role":
+            role = next((r for r in roles if r.metadata.name == role_name), None)
+        elif role_kind == "ClusterRole":
+            role = next((r for r in cluster_roles if r.metadata.name == role_name), None)
+        else:
+            continue
 
-        checks = [RbacCheck(**check) for check in checks_data]
-        summary = RbacSummary(
-            critical=summary_data.get("criticalCount", 0),
-            high=summary_data.get("highCount", 0),
-            medium=summary_data.get("mediumCount", 0),
-            low=summary_data.get("lowCount", 0)
-        )
+        if not role or not matches_rule(role.rules, verb, resource):
+            continue
+        
+        if rb.subjects:
+            for subject in rb.subjects:
+                authz_rules.append({
+                    "subject": f"{subject.kind}/{subject.name}",
+                    "namespace": rb.metadata.namespace,
+                    "role": f"{role_kind}/{role_name}"
+                })
 
-        rbac_report = RbacAssessmentReport(
-            name=metadata.get("name", ""),
-            namespace=metadata.get("namespace", ""),
-            creation_timestamp=metadata.get("creationTimestamp", ""),
-            resource_kind=item.get("kind", ""),
-            resource_name=metadata.get("name", ""),
-            uid=metadata.get("uid", ""),
-            checks=checks,
-            summary=summary
-        )
-        reports.append(rbac_report)
+    # 4. Procesar ClusterRoleBindings
+    for crb in cluster_role_bindings:
+        cr = next((r for r in cluster_roles if r.metadata.name == crb.role_ref.name), None)
+        if not cr or not matches_rule(cr.rules, verb, resource):
+            continue
+        if crb.subjects:
+            for subject in crb.subjects:
+                authz_rules.append({
+                    "subject": f"{subject.kind}/{subject.name}",
+                    "namespace": "cluster-wide",
+                    "role": f"ClusterRole/{crb.role_ref.name}"
+                })
 
-    return reports
+    return authz_rules
+
+def get_all_bindings() -> List[RbacBinding]:
+    rbac = client.RbacAuthorizationV1Api()
+    bindings: List[RbacBinding] = []
+    id_counter = 0
+
+    cluster_role_bindings: List[V1ClusterRoleBinding] = rbac.list_cluster_role_binding().items
+    for crb in cluster_role_bindings:
+        subjects = [RbacSubject(kind=s.kind, name=s.name, apiGroup=s.api_group or "") for s in crb.subjects or []]
+        role_ref = RbacRoleRef(kind=crb.role_ref.kind, name=crb.role_ref.name, apiGroup=crb.role_ref.api_group)
+
+        raw_yaml = yaml.safe_dump(crb.to_dict(), sort_keys=False)
+
+        bindings.append(RbacBinding(
+            id=id_counter,
+            name=crb.metadata.name,
+            kind="ClusterRoleBinding",
+            subjects=subjects,
+            roleRef=role_ref,
+            raw=raw_yaml
+        ))
+        id_counter += 1
+
+    role_bindings: List[V1RoleBinding] = rbac.list_role_binding_for_all_namespaces().items
+    for rb in role_bindings:
+        subjects = [RbacSubject(kind=s.kind, name=s.name, apiGroup=s.api_group or "") for s in rb.subjects or []]
+        role_ref = RbacRoleRef(kind=rb.role_ref.kind, name=rb.role_ref.name, apiGroup=rb.role_ref.api_group)
+
+        raw_yaml = yaml.safe_dump(rb.to_dict(), sort_keys=False)
+
+        bindings.append(RbacBinding(
+            id=id_counter,
+            name=rb.metadata.name,
+            kind="RoleBinding",
+            subjects=subjects,
+            roleRef=role_ref,
+            raw=raw_yaml
+        ))
+        id_counter += 1
+
+    return bindings

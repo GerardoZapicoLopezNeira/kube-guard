@@ -32,36 +32,29 @@ class RbacFinding(BaseModel):
     Subject: Subject
     Finding: FindingDetails
 
-class RbacFindingWithRules(BaseModel):
-    finding: RbacFinding
-    rules: List[RbacAllowedAction]
+class RbacPolicyRule(BaseModel):
+    apiGroups: List[str]
+    resources: List[str]
+    verbs: List[str]
+    resourceNames: Optional[List[str]] = None
+    nonResourceURLs: Optional[List[str]] = None
+    namespace: Optional[str] = None
 
-class RbacCheck(BaseModel):
-    checkID: str
-    title: str
-    description: str
-    category: str
-    severity: str
-    success: bool
-    remediation: str
-    messages: List[str]
 
-class RbacSummary(BaseModel):
-    critical: int
-    high: int
-    medium: int
-    low: int
-
-class RbacAssessmentReport(BaseModel):
+class RbacSubject(BaseModel):
+    kind: str
     name: str
-    namespace: str
-    creation_timestamp: str
-    resource_kind: str
-    resource_name: str
-    uid: str
-    checks: List[RbacCheck]
-    summary: RbacSummary
+    apiGroup: Optional[str] = ""
 
+class RbacRoleRef(BaseModel):
+    kind: str
+    name: str
+    apiGroup: Optional[str] = ""
 
-
-    
+class RbacBinding(BaseModel):
+    id: int
+    name: str
+    kind: str  # RoleBinding o ClusterRoleBinding
+    subjects: List[RbacSubject]
+    roleRef: RbacRoleRef
+    raw: Optional[str] = None  # YAML embellecido
