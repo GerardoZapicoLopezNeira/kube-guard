@@ -4,7 +4,7 @@ from kubernetes import client
 from typing import List, Optional, Tuple
 from app.models.correlation import CorrelatedRiskReport
 from app.services.trivy_service import get_trivy_reports
-from app.services.rbac_tool_service import run_rbac_analysis
+from app.services.rbac_service import run_rbac_analysis
 from app.models.trivy import TrivyReport
 from app.models.rbac import RbacFinding
 

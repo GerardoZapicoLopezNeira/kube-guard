@@ -28,3 +28,21 @@ class RbacPolicyRule(BaseModel):
     nonResourceURLs: Optional[List[str]] = None
     namespace: Optional[str] = None
 
+
+class RbacSubject(BaseModel):
+    kind: str
+    name: str
+    apiGroup: Optional[str] = ""
+
+class RbacRoleRef(BaseModel):
+    kind: str
+    name: str
+    apiGroup: Optional[str] = ""
+
+class RbacBinding(BaseModel):
+    id: int
+    name: str
+    kind: str  # RoleBinding o ClusterRoleBinding
+    subjects: List[RbacSubject]
+    roleRef: RbacRoleRef
+    raw: Optional[str] = None  # YAML embellecido
