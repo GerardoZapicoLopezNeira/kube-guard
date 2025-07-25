@@ -1,18 +1,18 @@
 # Python
 __pycache__/
-*.pyc
-venv/
+*.py[cod]
+*.egg-info/
+.venv/
 .env
 
 # Node
 node_modules/
 dist/
 build/
-.env.local
+.vite/
 
-# Docker
+# IDE / SO
+.DS_Store
+.vscode/
 *.log
-*.pid
-
-# Kubernetes
-*.yaml~*
+*.swp
