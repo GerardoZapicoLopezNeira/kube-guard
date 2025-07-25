@@ -276,14 +276,6 @@ When the server is running, comprehensive API documentation is available at:
 - **ReDoc**: `http://localhost:8000/redoc` (Alternative documentation)
 - **OpenAPI Schema**: `http://localhost:8000/openapi.json`
 
-## 🤝 Contributing
-
-1. Follow the established code patterns and documentation style
-2. Add type annotations for all functions and methods
-3. Include comprehensive docstrings with examples
-4. Test endpoints with various cluster configurations
-5. Update documentation for any API changes
-
 ---
 
 For frontend integration details, see the [Frontend README](../frontend/README.md).

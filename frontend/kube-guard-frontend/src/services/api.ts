@@ -16,11 +16,8 @@
  * @version 1.0.0
  */
 
-import axios from "axios"
 import type { RbacBinding, RbacFinding, RbacPolicyRule, K8sPolicyRule } from "../types/rbac"
 
-/** Base URL for the KubeGuard backend API */
-const BASE_URL = "http://localhost:8000"
 
 /**
  * Fetches RBAC bindings from the API.
@@ -32,8 +29,9 @@ const BASE_URL = "http://localhost:8000"
  * @throws Error if the API request fails
  */
 export async function fetchBindings(): Promise<RbacBinding[]> {
-  const response = await axios.get(`${BASE_URL}/rbac/bindings`)
-  return response.data
+  const response = await fetch("/rbac/bindings")
+  if (!response.ok) throw new Error(response.statusText)
+  return response.json()
 }
 
 /**
@@ -87,8 +85,8 @@ export async function fetchPolicyRules(subject: string): Promise<RbacPolicyRule[
 export async function fetchBatchPolicyRules(subjects: string[]): Promise<Record<string, RbacPolicyRule[]>> {
   // 🧠 INTELLIGENT LOGIC: Choose between GET and POST based on URL size
   const maxUrlLength = 2000 // Conservative limit for URLs
-  const baseUrl = `${BASE_URL}/rbac/policy-rules/batch`
-  
+  const baseUrl = `/rbac/policy-rules/batch`
+
   // Build query params to estimate URL length
   const params = new URLSearchParams()
   subjects.forEach(subject => params.append('subjects', subject))
@@ -98,8 +96,9 @@ export async function fetchBatchPolicyRules(subjects: string[]): Promise<Record<
     // ✅ Short URL: use GET (semantically correct)
     console.log(`🔗 Using GET for ${subjects.length} subjects (URL: ${estimatedUrl.length} chars)`)
     try {
-      const response = await axios.get(estimatedUrl)
-      return response.data
+      const response = await fetch(estimatedUrl)
+      if (!response.ok) throw new Error(response.statusText)
+      return response.json()
     } catch (error) {
       // If GET fails due to URL being too long, fallback to POST
       console.warn('🔄 GET failed, falling back to POST:', error)
@@ -109,8 +108,13 @@ export async function fetchBatchPolicyRules(subjects: string[]): Promise<Record<
   }
   
   // 🚀 Long URL or GET failed: use POST as fallback
-  const response = await axios.post(`${BASE_URL}/rbac/policy-rules/batch`, subjects)
-  return response.data
+  const response = await fetch("/rbac/policy-rules/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subjects)
+  })
+  if (!response.ok) throw new Error(response.statusText)
+  return response.json()
 }
 
 /**
@@ -176,6 +180,7 @@ export async function fetchRoleRules(
     params.append('namespace', namespace)
   }
   
-  const response = await axios.get(`${BASE_URL}/rbac/roles?${params.toString()}`)
-  return response.data
+  const response = await fetch(`/rbac/roles?${params.toString()}`)
+  if (!response.ok) throw new Error(response.statusText)
+  return response.json()
 }

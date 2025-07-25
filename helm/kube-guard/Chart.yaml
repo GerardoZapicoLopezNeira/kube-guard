@@ -1,0 +1,17 @@
+apiVersion: v2
+name: kube-guard
+description: A Helm chart for KubeGuard RBAC Security Analysis Tool
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - kubernetes
+  - rbac
+  - security
+  - analysis
+home: https://github.com/GerardoZapicoLopezNeira/kube-guard
+sources:
+  - https://github.com/GerardoZapicoLopezNeira/kube-guard
+maintainers:
+  - name: Gerardo Zapico
+    email: gerardozapico2002@gmail.com

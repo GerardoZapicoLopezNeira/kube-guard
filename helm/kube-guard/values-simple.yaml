@@ -1,0 +1,134 @@
+# KubeGuard Helm Chart Values - SIMPLIFIED VERSION
+# This file is a minimal configuration for local testing without Docker Hub
+
+# ========================================
+# IMAGE CONFIG (WITHOUT DOCKER HUB)
+# ========================================
+global:
+  imageRegistry: ""  # Local images
+  imagePullSecrets: []
+
+# Backend API Configuration
+backend:
+  enabled: true
+  
+  image:
+    repository: kube-guard-backend
+    tag: "latest"                   
+    pullPolicy: Never               
+  
+  replicaCount: 1                    
+  
+  service:
+    type: ClusterIP                  
+    port: 8000
+    targetPort: 8000
+
+  resources:
+    requests:
+      memory: "128Mi"                
+      cpu: "50m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Frontend Configuration  
+frontend:
+  enabled: true
+  
+  image:
+    repository: kube-guard-frontend 
+    tag: "latest"
+    pullPolicy: Never
+
+  replicaCount: 1
+  
+  service:
+    type: ClusterIP                  
+    port: 80
+    targetPort: 80
+
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "25m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# =======================
+# SECURITY & PERMISSIONS
+# =======================
+
+# Pod Security Context 
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 2000
+  fsGroup: 2000
+
+rbac:
+  create: true                       
+  serviceAccountName: "kube-guard"   
+
+  # Minimum permissions (READ-ONLY)
+  rules:
+    - apiGroups: [""]
+      resources: ["pods", "services", "serviceaccounts"]
+      verbs: ["get", "list"]
+    - apiGroups: ["rbac.authorization.k8s.io"]
+      resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+      verbs: ["get", "list"]         
+
+# ============
+# NAMESPACE 
+# ============
+namespace:
+  create: true
+  name: "kube-guard"                 
+  labels:
+    purpose: "rbac-analysis"
+    security.policy: "restricted"
+
+# Ingress - NOT NEEDED IN PRODUCTION (use port-forward)
+ingress:
+  enabled: false
+
+# Autoscaling - NOT NEEDED FOR TESTING
+autoscaling:
+  enabled: false
+
+# Pod Disruption Budget - NOT NEEDED FOR TESTING
+podDisruptionBudget:
+  backend:
+    enabled: false
+  frontend:
+    enabled: false
+
+# Monitoring - NOT NEEDED FOR TESTING
+monitoring:
+  serviceMonitor:
+    enabled: false
+
+# Persistence - NOT NEEDED FOR TESTING
+persistence:
+  enabled: false
+
+# Network Policy
+networkPolicy:
+  enabled: false                      
+  ingress:
+    enabled: false
+    allowedCIDRs: []                
+
+# Node Selection - NOT NEEDED FOR TESTING
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Additional configurations - NOT NEEDED FOR TESTING
+podAnnotations: {}
+podLabels: {}
+extraEnvVars: []
+extraVolumes: []
+extraVolumeMounts: []

@@ -22,6 +22,28 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Add health endpoints for Kubernetes
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Kubernetes liveness probe"""
+    return {"status": "healthy", "service": "kube-guard-backend"}
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness check endpoint for Kubernetes readiness probe"""
+    try:
+        # Simple check - if we can import our modules, we're ready
+        from app.services.rbac_service import get_all_bindings
+        return {"status": "ready", "service": "kube-guard-backend"}
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail="Service not ready")
+
+@app.get("/metrics")
+async def metrics():
+    """Basic metrics endpoint (simple text format)"""
+    return {"metrics": "# HELP kube_guard_up Application status\nkube_guard_up 1\n"}
+
 def startup():
     """
     Application startup event handler.
@@ -46,13 +68,3 @@ app.add_middleware(
 
 # Register API routers
 app.include_router(rbac.router, prefix="/rbac", tags=["RBAC"])
-
-@app.get("/health", tags=["Health"])
-def health():
-    """
-    Health check endpoint.
-    
-    Returns:
-        dict: Simple status response indicating the API is running
-    """
-    return {"status": "ok"}

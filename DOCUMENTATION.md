@@ -43,7 +43,6 @@ Welcome to the KubeGuard documentation. This page serves as a comprehensive inde
 ### Development
 - **[Backend Development](./backend/README.md#🔧-development)** - Development workflow and testing
 - **[Frontend Development](./frontend/README.md#🔧-development)** - Development tools and debugging
-- **[Contributing Guidelines](./README.md#🤝-contributing)** - How to contribute to the project
 
 ## 🔗 External Resources
 

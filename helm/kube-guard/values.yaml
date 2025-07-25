@@ -1,0 +1,144 @@
+# KubeGuard Helm Chart Values - Production Configuration
+# Optimized for Docker Hub deployment with port-forward access
+
+# ========================================
+# DOCKER HUB CONFIGURATION
+# ========================================
+global:
+  imageRegistry: "docker.io"          # Docker Hub registry
+  imagePullSecrets: []                 # Public images - no auth required
+
+# ========================================
+# BACKEND API SERVICE
+# ========================================
+backend:
+  enabled: true
+
+  config:
+    apiPort: 8000                      # FastAPI server port
+    debug: false                       # Production mode
+    logLevel: "INFO"                   # Standard logging level
+  
+  image:
+    repository: gerardozapicouc3m/kube-guard-backend
+    tag: "latest"
+    pullPolicy: Always                 # Always pull from registry
+  
+  replicaCount: 1                      # Single instance for testing
+  
+  service:
+    type: ClusterIP                    # Internal cluster access only
+    port: 8000
+    targetPort: 8000
+
+  resources:
+    requests:
+      memory: "256Mi"                  # Minimum memory allocation
+      cpu: "100m"                      # Minimum CPU allocation
+    limits:
+      memory: "1Gi"                    # Maximum memory limit
+      cpu: "500m"                      # Maximum CPU limit
+
+# ========================================
+# FRONTEND WEB SERVICE
+# ========================================
+frontend:
+  enabled: true
+  
+  image:
+    repository: gerardozapicouc3m/kube-guard-frontend
+    tag: "latest"
+    pullPolicy: Always                 # Always pull from registry
+  
+  replicaCount: 1                      # Single instance for testing
+  
+  service:
+    type: ClusterIP                    # Internal cluster access only
+    port: 80
+    targetPort: 80
+
+  resources:
+    requests:
+      memory: "128Mi"                  # Minimum memory for nginx
+      cpu: "50m"                       # Minimum CPU for static content
+    limits:
+      memory: "512Mi"                  # Maximum memory limit
+      cpu: "200m"                      # Maximum CPU limit
+
+# ========================================
+# SECURITY CONFIGURATION
+# ========================================
+securityContext:
+  runAsNonRoot: true                   # Non-root execution for security
+  runAsUser: 1001                      # Dedicated user ID
+  runAsGroup: 2001                     # Dedicated group ID
+  fsGroup: 2001                        # File system group
+
+# RBAC - Minimal required permissions
+rbac:
+  create: true
+  serviceAccountName: "kube-guard"
+  rules:
+    - apiGroups: [""]
+      resources: ["serviceaccounts", "namespaces"]
+      verbs: ["get", "list"]           # Read-only access
+    - apiGroups: ["rbac.authorization.k8s.io"]
+      resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+      verbs: ["get", "list"]           # Read-only RBAC access
+
+# ========================================
+# DISABLED FEATURES (simplified deployment)
+# ========================================
+
+# Ingress - Disabled (using port-forward instead)
+ingress:
+  enabled: false
+
+# Autoscaling - Disabled (single replica for testing)
+autoscaling:
+  backend:
+    enabled: false
+  frontend:
+    enabled: false
+
+# Pod Disruption Budget - Disabled (testing environment)
+podDisruptionBudget:
+  backend:
+    enabled: false
+  frontend:
+    enabled: false
+
+# Network Policy - Disabled (simplified networking)
+networkPolicy:
+  enabled: false
+
+# Monitoring - Disabled (simplified deployment)
+monitoring:
+  serviceMonitor:
+    enabled: false
+
+# Persistence - Disabled (stateless application)
+persistence:
+  enabled: false
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  annotations: {}
+  mountPath: /data
+
+# Health checks for reliability
+healthChecks:
+  backend:
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8000
+      initialDelaySeconds: 30          # Wait for startup
+      periodSeconds: 10                # Check every 10s
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8000
+      initialDelaySeconds: 10          # Quick readiness check
+      periodSeconds: 5                 # Check every 5s

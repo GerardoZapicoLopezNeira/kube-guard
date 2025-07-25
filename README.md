@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)](https://www.python.org/downloads/)
 [![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)](https://reactjs.org/)
 
-KubeGuard is a comprehensive RBAC (Role-Based Access Control) security analysis tool for Kubernetes clusters. It provides visualization, analysis, and recommendations for improving cluster security through better RBAC configuration.
+KubeGuard is a tool for auditing and analyzing Kubernetes RBAC (Role-Based Access Control) configurations. It provides visualization, analysis, and recommendations for improving cluster security through better RBAC configuration.
 
 ## 🎯 Features
 
@@ -115,26 +115,8 @@ The frontend automatically detects the backend URL and adapts to different envir
 - **[Documentation Index](./DOCUMENTATION.md)**: Comprehensive documentation guide and index
 - **[Backend Documentation](./backend/README.md)**: Detailed backend setup and API reference
 - **[Frontend Documentation](./frontend/README.md)**: Frontend architecture and component guide
-- **[API Documentation](http://localhost:8000/docs)**: Interactive OpenAPI documentation (when backend is running)
+- **[API Documentation](http://localhost:8000/docs)**: Interactive OpenAPI documentation (when backend is running "http://localhost:8000/docs")
 - **[Changelog](./CHANGELOG.md)**: Version history and release notes
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](./CONTRIBUTING.md) for detailed information on:
-
-- **Development setup** and local environment
-- **Code style** and documentation standards  
-- **Pull request process** and review guidelines
-- **Testing requirements** and best practices
-
-Quick contribution steps:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes and add tests
-4. Update documentation as needed
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
 
 ## 📄 License
 

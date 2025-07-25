@@ -58,7 +58,7 @@ def get_rbac_findings():
                           subjects, severity, and recommendations
                           
     Raises:
-        HTTPException: If the analysis fails or kubectl rbac-tool is unavailable
+        HTTPException: If the analysis fails or rbac-tool is unavailable
     """
     return run_rbac_analysis()
 

@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "kube-guard.fullname" . }}-test"
+  labels:
+    {{- include "kube-guard.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: test
+    image: curlimages/curl:latest
+    command:
+    - /bin/sh
+    - -c
+    - |
+      set -e
+      echo "Testing KubeGuard deployment..."
+      
+      # Test backend health endpoint
+      echo "Testing backend health..."
+      curl -f http://{{ include "kube-guard.fullname" . }}-backend:{{ .Values.backend.service.port }}/health
+      
+      # Test backend readiness endpoint
+      echo "Testing backend readiness..."
+      curl -f http://{{ include "kube-guard.fullname" . }}-backend:{{ .Values.backend.service.port }}/ready
+      
+      # Test frontend availability
+      echo "Testing frontend..."
+      curl -f http://{{ include "kube-guard.fullname" . }}-frontend:{{ .Values.frontend.service.port }}/
+      
+      # Test API endpoints
+      echo "Testing RBAC bindings endpoint..."
+      curl -f http://{{ include "kube-guard.fullname" . }}-backend:{{ .Values.backend.service.port }}/rbac/bindings
+      
+      echo "All tests passed successfully!"
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL

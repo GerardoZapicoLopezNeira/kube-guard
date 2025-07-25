@@ -8,7 +8,7 @@ Kubernetes API and external tools to perform security analysis and retrieve
 RBAC configuration information.
 
 Key functionalities:
-- Security analysis using kubectl rbac-tool
+- Security analysis using rbac-tool
 - Policy rule retrieval and analysis
 - Permission queries and reverse lookups
 - RBAC binding enumeration
@@ -25,11 +25,55 @@ import yaml
 from app.models.rbac import K8sPolicyRule, RbacFinding, RbacPolicyRule, RbacBinding, RbacSubject, RbacRoleRef
 from typing import Dict, List
 
+def _setup_rbac_tool_env():
+    """
+    Set up environment variables for rbac-tool to use in-cluster authentication.
+    
+    When running inside a Kubernetes pod, rbac-tool needs to be configured
+    to use the ServiceAccount token for cluster authentication. This function
+    sets the necessary environment variables.
+    """
+    import os
+    
+    # Check if we're running in a Kubernetes pod
+    if os.path.exists('/var/run/secrets/kubernetes.io/serviceaccount'):
+        # Set KUBECONFIG to use in-cluster authentication
+        # We'll create a minimal kubeconfig that points to the in-cluster config
+        kubeconfig_content = """
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    server: https://kubernetes.default.svc
+  name: default
+contexts:
+- context:
+    cluster: default
+    user: default
+  name: default
+current-context: default
+users:
+- name: default
+  user:
+    tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+"""
+        # Write kubeconfig to a temporary file
+        kubeconfig_path = "/tmp/kubeconfig"
+        with open(kubeconfig_path, 'w') as f:
+            f.write(kubeconfig_content)
+        
+        # Set KUBECONFIG environment variable
+        os.environ['KUBECONFIG'] = kubeconfig_path
+        return kubeconfig_path
+    
+    return None
+
 def run_rbac_analysis() -> List[RbacFinding]:
     """
-    Run comprehensive RBAC security analysis using kubectl rbac-tool.
+    Run comprehensive RBAC security analysis using rbac-tool.
     
-    This function executes the kubectl rbac-tool to perform a cluster-wide
+    This function executes the rbac-tool to perform a cluster-wide
     analysis of RBAC configurations, identifying potential security issues,
     misconfigurations, and overly permissive roles.
     
@@ -38,13 +82,17 @@ def run_rbac_analysis() -> List[RbacFinding]:
                           messages, and recommendations
                           
     Note:
-        Requires kubectl rbac-tool to be installed and accessible in PATH.
+        Requires rbac-tool to be installed and accessible in PATH.
         Falls back to empty list if the tool is unavailable or fails.
+        Automatically configures in-cluster authentication when running in a pod.
     """
     try:
-        # Execute kubectl rbac-tool analysis with JSON output
+        # Set up in-cluster authentication for rbac-tool
+        _setup_rbac_tool_env()
+        
+        # Execute rbac-tool analysis with JSON output
         result = subprocess.run(
-            ["kubectl", "rbac-tool", "analysis", "-o", "json"],
+            ["rbac-tool", "analysis", "-o", "json"],
             capture_output=True,
             check=True,
             timeout=30  # Prevent hanging on large clusters
@@ -77,9 +125,12 @@ def fetch_rbac_policy_rules(subject: str) -> List[RbacPolicyRule]:
         subprocess.CalledProcessError: If kubectl command fails
         json.JSONDecodeError: If output parsing fails
     """
-    # Execute kubectl rbac-tool policy-rules command
+    # Set up in-cluster authentication for rbac-tool
+    _setup_rbac_tool_env()
+    
+    # Execute rbac-tool policy-rules command
     result = subprocess.run(
-        ["kubectl", "rbac-tool", "policy-rules", "-o", "json", "-e", subject],
+        ["rbac-tool", "policy-rules", "-o", "json", "-e", subject],
         capture_output=True, check=True, timeout=30
     )
     

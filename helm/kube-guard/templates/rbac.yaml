@@ -1,0 +1,51 @@
+{{- if .Values.rbac.create -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kube-guard.serviceAccountName" . }}
+  labels:
+    {{- include "kube-guard.labels" . | nindent 4 }}
+  {{- with .Values.rbac.serviceAccountAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kube-guard.fullname" . }}-reader
+  labels:
+    {{- include "kube-guard.labels" . | nindent 4 }}
+rules:
+# Required for RBAC analysis
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "clusterroles", "rolebindings", "clusterrolebindings"]
+  verbs: ["get", "list"]
+# Required for subject enumeration
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["get", "list"]
+# Required for namespace analysis
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list"]
+{{- with .Values.rbac.additionalRules }}
+{{- toYaml . | nindent 0 }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kube-guard.fullname" . }}-reader
+  labels:
+    {{- include "kube-guard.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kube-guard.fullname" . }}-reader
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kube-guard.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}

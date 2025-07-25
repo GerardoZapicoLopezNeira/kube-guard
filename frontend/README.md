@@ -315,21 +315,6 @@ All components include comprehensive JSDoc documentation:
 - **D3.js integration**: Optimal for complex graph visualizations
 - **Component refactoring**: Improved maintainability and testability
 
-## 🤝 Contributing
-
-### Development Workflow
-1. **Feature branches** from `main`
-2. **TypeScript strict** compliance
-3. **Component documentation** required
-4. **Performance testing** for data-heavy features
-5. **Cross-browser testing**
-
-### Code Style
-- **Functional components** with hooks
-- **Custom hooks** for reusable logic
-- **Proper TypeScript** types and interfaces
-- **Consistent naming** conventions
-
 ---
 
 For backend integration details, see the [Backend README](../backend/README.md).
