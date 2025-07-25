@@ -47,7 +47,19 @@ kube-guard/
 - Node.js 16+
 - Kubernetes cluster access
 - `kubectl` configured
-- `rbac-tool` CLI installed
+- `rbac-tool` installed (as kubectl plugin via krew or standalone)
+
+### rbac-tool Installation
+
+Choose one of the following methods:
+
+```bash
+# Option 1: kubectl plugin via krew (recommended)
+kubectl krew install rbac-tool
+
+# Option 2: Standalone installation
+curl https://raw.githubusercontent.com/alcideio/rbac-tool/master/download.sh | bash
+```
 
 ### Backend Setup
 

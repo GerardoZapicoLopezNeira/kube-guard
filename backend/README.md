@@ -25,7 +25,7 @@ backend/
 
 - Python 3.8+
 - `kubectl` configured and connected to a Kubernetes cluster
-- `rbac-tool` CLI installed ([Installation Guide](https://github.com/alcideio/rbac-tool))
+- `rbac-tool` installed ([Installation Guide](https://github.com/alcideio/rbac-tool))
 
 ### Installation
 
@@ -46,18 +46,44 @@ backend/
    pip install -r requirements.txt
    ```
 
-4. **Install rbac-tool** (if not already installed):
+4. **Install rbac-tool** (choose one method):
+   
+   **Option A: Using kubectl krew plugin manager (Recommended)**:
    ```bash
+   # Install krew if not already installed
+   kubectl krew install rbac-tool
+   
+   # Verify installation
+   kubectl rbac-tool --help
+   ```
+   
+   **Option B: Standalone installation**:
+   ```bash
+   # Quick install script
+   curl https://raw.githubusercontent.com/alcideio/rbac-tool/master/download.sh | bash
+   
+   # Or manual download
    # macOS
    brew install alcideio/tap/rbac-tool
    
-   # Linux
+   # Linux (specific version)
    curl -o rbac-tool https://github.com/alcideio/rbac-tool/releases/download/v1.13.0/rbac-tool_v1.13.0_linux_amd64
    chmod +x rbac-tool
    sudo mv rbac-tool /usr/local/bin/
    ```
 
-5. **Run the development server**:
+5. **Verify rbac-tool installation**:
+   ```bash
+   # For krew installation
+   kubectl rbac-tool --help
+   
+   # For standalone installation  
+   rbac-tool --help
+   ```
+   
+   **Note**: The backend is configured to use `kubectl rbac-tool` (krew plugin format). If you installed the standalone version, you may need to create a symlink or alias.
+
+6. **Run the development server**:
    ```bash
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
@@ -132,13 +158,33 @@ API_HOST=0.0.0.0
 API_PORT=8000
 DEBUG=True
 
-# RBAC Tool Configuration
-RBAC_TOOL_PATH=/usr/local/bin/rbac-tool
+# RBAC Tool Configuration (Optional)
+# Note: Backend uses 'kubectl rbac-tool' by default (krew plugin)
+# Override only if using standalone installation
+RBAC_TOOL_PATH=rbac-tool  # or /usr/local/bin/rbac-tool for standalone
 RBAC_TOOL_TIMEOUT=30
 
 # Kubernetes Configuration
 KUBECONFIG=~/.kube/config
 ```
+
+### RBAC Tool Configuration Notes
+
+The backend is designed to work with `kubectl rbac-tool` (installed via krew). If you're using the standalone version, you have two options:
+
+1. **Create a wrapper script** (recommended):
+   ```bash
+   # Create /usr/local/bin/kubectl-rbac-tool
+   #!/bin/bash
+   /usr/local/bin/rbac-tool "$@"
+   chmod +x /usr/local/bin/kubectl-rbac-tool
+   ```
+
+2. **Use environment variable**:
+   ```bash
+   export RBAC_TOOL_PATH="rbac-tool"
+   # Then modify service calls to use the path directly
+   ```
 
 ## 🧪 Development
 
@@ -183,17 +229,33 @@ The codebase follows these standards:
 
 1. **rbac-tool not found**:
    ```bash
+   # Check if installed as kubectl plugin
+   kubectl rbac-tool --help
+   
+   # Check standalone installation
    which rbac-tool
+   
    # If not found, install using the installation steps above
    ```
 
-2. **kubectl connection issues**:
+2. **"kubectl rbac-tool" command not found**:
+   ```bash
+   # Check krew installation
+   kubectl krew list | grep rbac-tool
+   
+   # If not installed via krew, create wrapper:
+   echo '#!/bin/bash' > /usr/local/bin/kubectl-rbac-tool
+   echo '/usr/local/bin/rbac-tool "$@"' >> /usr/local/bin/kubectl-rbac-tool
+   chmod +x /usr/local/bin/kubectl-rbac-tool
+   ```
+
+3. **kubectl connection issues**:
    ```bash
    kubectl cluster-info
    # Verify cluster connection
    ```
 
-3. **Permission errors**:
+4. **Permission errors**:
    ```bash
    kubectl auth can-i list clusterroles
    # Verify sufficient permissions for RBAC analysis
