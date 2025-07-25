@@ -7,9 +7,6 @@ KubeGuard implements a tool to analyze RBAC permissions in Kubernetes clusters w
 ## Authentication & Authorization
 
 ### ServiceAccount-Based Authentication
-- **In-cluster authentication**: Uses Kubernetes ServiceAccount tokens
-- **No external credentials**: Eliminates credential management overhead
-- **Automatic token rotation**: Leverages Kubernetes native token lifecycle
 
 ### RBAC Permissions
 ```yaml
@@ -30,14 +27,9 @@ rules:
 
 ## Network Security
 
-### Internal Communication
-- **Service mesh ready**: Compatible with Istio/Linkerd
-- **Internal DNS**: Uses Kubernetes service discovery
-- **No external dependencies**: Self-contained analysis
-
 ### Ingress Security
 - **Optional ingress**: No external exposure by default
-- **TLS termination**: HTTPS support when ingress is enabled
+- **TLS termination**: HTTPS support when ingress is enabled (NOT YET SUPPORTED on frontend <--> backend communication)
 - **Network policies**: Configurable traffic restrictions
 
 ## Container Security
@@ -93,7 +85,7 @@ securityContext:
 ### Audit Capabilities
 - **Comprehensive logging**: All RBAC analysis activities logged
 - **Kubernetes audit**: Integrates with cluster audit logs
-- **Prometheus metrics**: Security-relevant metrics exposed
+- **Prometheus metrics**: Security-relevant metrics exposed (NOT YET IMPLEMENTED)
 
 ## Security Monitoring
 

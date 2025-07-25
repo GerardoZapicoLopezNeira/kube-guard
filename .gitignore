@@ -18,4 +18,4 @@ build/
 *.swp
 
 # Shell scripts
-*.sh
+push-images.sh

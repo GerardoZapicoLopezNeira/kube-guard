@@ -9,10 +9,10 @@ KubeGuard is a tool for auditing and analyzing Kubernetes RBAC (Role-Based Acces
 
 ## 🎯 Features
 
-- **Security Analysis**: Comprehensive RBAC security findings and vulnerability detection
+- **Security Analysis**: Comprehensive RBAC security findings and vulnerability detection through the use of rbac-tool analysis
 - **Interactive Visualization**: D3.js-powered graph visualization of RBAC relationships
 - **Performance Optimized**: Intelligent batch loading and caching for large datasets
-- **Modern UI**: Beautiful, responsive interface built with React and TypeScript
+- **Modern UI**: Responsive interface built with React and TypeScript
 - **Export Capabilities**: Export visualizations as SVG or DOT format
 - **Real-time Filtering**: Advanced filtering by subjects, resources, verbs, and namespaces
 
@@ -93,30 +93,89 @@ The application will be available at `http://localhost:5173`
 - **Intelligent Caching**: Automatic data caching and deduplication
 - **Performance Optimized**: Batch loading and memoization
 
-## � Configuration
+## 🔧 Configuration & Deployment
 
-### Backend Configuration
-Configuration is managed through environment variables:
-
+### Local Development
 ```bash
-# API Configuration
-API_HOST=0.0.0.0
-API_PORT=8000
+# Quick start with minikube
+./deploy.sh
 
-# RBAC Tool Configuration
-RBAC_TOOL_PATH=/usr/local/bin/rbac-tool
+# Access the application
+kubectl port-forward -n kube-guard service/kube-guard-frontend 8080:80
 ```
 
-### Frontend Configuration
-The frontend automatically detects the backend URL and adapts to different environments.
+### Production Deployment (Docker Hub)
+```bash
+# Deploy from published images
+helm upgrade --install kube-guard ./helm/kube-guard \
+  --namespace kube-guard \
+  --create-namespace \
+  --values ./helm/kube-guard/values.yaml \
+  --wait
 
+# Access the application
+kubectl port-forward -n kube-guard service/kube-guard-frontend 8080:80
+```
+
+### Configuration Options
+
+#### Helm Values (values.yaml)
+```yaml
+# Resource allocation
+backend:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Security settings
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# RBAC permissions (read-only)
+rbac:
+  rules:
+    - apiGroups: [""]
+      resources: ["serviceaccounts", "namespaces"]
+      verbs: ["get", "list"]
+    - apiGroups: ["rbac.authorization.k8s.io"]
+      resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+      verbs: ["get", "list"]
+```
+
+#### Environment Variables
+```bash
+# Backend configuration (if running standalone)
+API_PORT=8000
+LOG_LEVEL=INFO
+RBAC_TOOL_TIMEOUT=300
+
+# Frontend configuration (automatically configured in Kubernetes)
+REACT_APP_API_URL=http://kube-guard-backend:8000
+```
+
+### Cluster Requirements
+- Kubernetes 1.19+
+- RBAC enabled
+- Sufficient permissions to read RBAC resources
+- `rbac-tool` available in backend container (included in Docker image)
+
+### Access Methods
+1. **Port-forward** (recommended for testing): `kubectl port-forward -n kube-guard service/kube-guard-frontend 8080:80`
+2. **Ingress** (optional): Enable in values.yaml for production deployments
+3. **NodePort** (minikube): Set service type to NodePort if needed
 ## 📖 Documentation
 
 - **[Documentation Index](./DOCUMENTATION.md)**: Comprehensive documentation guide and index
 - **[Backend Documentation](./backend/README.md)**: Detailed backend setup and API reference
 - **[Frontend Documentation](./frontend/README.md)**: Frontend architecture and component guide
+- **[Tool Architecture](ARCHITECTURE.md)**: KubeGuard tool architecture diagrams and data flow
+- **[KubeGuard Security Aspects](SECURITY.md)**: Security related information regarding KubeGuard in-cluster deployment
 - **[API Documentation](http://localhost:8000/docs)**: Interactive OpenAPI documentation (when backend is running "http://localhost:8000/docs")
-- **[Changelog](./CHANGELOG.md)**: Version history and release notes
 
 ## 📄 License
 
@@ -129,10 +188,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [React](https://reactjs.org/) and [TypeScript](https://www.typescriptlang.org/) for the frontend
 - [FastAPI](https://fastapi.tiangolo.com/) for the backend API
 
-## 📧 Support
-
-For questions, issues, or contributions, please open an issue on GitHub or contact the development team.
-
----
-
-**Made with ❤️ for the Kubernetes security community**
